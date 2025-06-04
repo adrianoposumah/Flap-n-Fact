@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -7,26 +8,34 @@ public class Player : MonoBehaviour
     private Rigidbody2D _rigidbody;
     [SerializeField] private float _velocity = 4.5f;
     [SerializeField] private float _rotationSpeed = 5f;
-    
-    // Add references to the managers
+
+    private AudioSource flapAudio;
+    [SerializeField] private AudioClip hitAudio;
+    [SerializeField] private AudioClip pointAudio;
+
     private GameManager gameManager;
     private QuestionManager questionManager;
+
+    private bool isDead = false;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         _rigidbody = GetComponent<Rigidbody2D>();
-        
-        // Get references to managers
+        flapAudio = GetComponent<AudioSource>();
+
         gameManager = FindObjectOfType<GameManager>();
         questionManager = FindObjectOfType<QuestionManager>();
     }
 
     private void Update()
     {
+        if (isDead) return;
+
         if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
         {
             _rigidbody.velocity = Vector2.up * _velocity;
+            PlayFlapSound();
         }
 
         if (Input.touchCount > 0)
@@ -35,17 +44,21 @@ public class Player : MonoBehaviour
             if (touch.phase == TouchPhase.Began)
             {
                 _rigidbody.velocity = Vector2.up * _velocity;
+                PlayFlapSound();
             }
         }
     }
 
     private void FixedUpdate()
     {
-        transform.rotation = Quaternion.Euler(0, 0, _rigidbody.velocity.y * _rotationSpeed);
+        float angle = _rigidbody.velocity.y * _rotationSpeed;
+        transform.rotation = Quaternion.Euler(0, 0, angle);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        if (isDead) return;
+
         if (collision.CompareTag("GreenGem"))
         {
             HandleGemInteraction(true, collision.transform);
@@ -56,7 +69,7 @@ public class Player : MonoBehaviour
         }
         else if (collision.CompareTag("Obstacle"))
         {
-            gameManager.GameOver();
+            StartCoroutine(DelayedGameOver());
         }
     }
 
@@ -67,12 +80,52 @@ public class Player : MonoBehaviour
             gameManager.IncreaseScore();
             questionManager.SetNextQuestion();
 
-            // Optional: efek partikel untuk gem
+            PlayPointSound(); // ✅ Suara poin benar
+
             Destroy(gemTransform.gameObject);
         }
         else
         {
-            gameManager.GameOver();
+            StartCoroutine(DelayedGameOver());
         }
+    }
+
+    private void PlayFlapSound()
+    {
+        if (flapAudio != null && flapAudio.clip != null)
+        {
+            flapAudio.Play();
+        }
+    }
+
+    private void PlayHitSound()
+    {
+        if (flapAudio != null && hitAudio != null)
+        {
+            flapAudio.PlayOneShot(hitAudio);
+        }
+    }
+
+    private void PlayPointSound()
+    {
+        if (flapAudio != null && pointAudio != null)
+        {
+            flapAudio.PlayOneShot(pointAudio);
+        }
+    }
+
+    private IEnumerator DelayedGameOver()
+    {
+        isDead = true;
+
+        PlayHitSound(); // ✅ Suara kena obstacle / jawaban salah
+
+        _rigidbody.velocity = Vector2.zero;
+        _rigidbody.gravityScale = 1f;
+        _rotationSpeed = 10f;
+
+        yield return new WaitForSeconds(1f);
+
+        gameManager.GameOver();
     }
 }
