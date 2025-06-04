@@ -1499,7 +1499,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d97c4dbcc34ac4a40bff39827a1791aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SceneName: CaraBermain
+  SceneName: Instructions
 --- !u!1 &1766570769
 GameObject:
   m_ObjectHideFlags: 0
