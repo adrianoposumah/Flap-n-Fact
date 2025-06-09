@@ -12,6 +12,12 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         UpdateScoreUI();
+        MusicManager.Instance.PlayMusic("Game");
+    }
+
+    private void Play()
+    {
+        MusicManager.Instance.PlayMusic("Game");
     }
 
     public void HideAllUIObjects()
